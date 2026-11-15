@@ -10,12 +10,13 @@ unless you set up webhooks or link it to Chronos Cloud (both optional).
 
 | | |
 |---|---|
-| Current release | **0.2.11** ([release notes](https://github.com/Abhishekxdg/chronos-gateway-releases/releases)) |
-| Engine it bundles | Chronos **0.4.10** ([release](https://github.com/Abhishekxdg/Chronos-DB/releases/tag/v0.4.10)) |
-| Status | Early (0.2). Try it on a staging copy of your database first. |
+| Current release | **0.3.0** ([release notes](https://github.com/Abhishekxdg/chronos-gateway-releases/releases)) |
+| Engine it bundles | Chronos **0.5.0** ([release](https://github.com/Abhishekxdg/Chronos-DB/releases/tag/v0.5.0)) |
+| Status | Early (0.3). Try it on a staging copy of your database first. |
 | New in 0.2.0 | [The console](#the-console): set it up, review and approve, and change the rules in your browser; [your own domain](#on-your-own-domain-over-https) with HTTPS. |
 | New in 0.2.1 | Console fixes: conflicts shown row by row with by-column settling, plain-word table names, "?" rows for tables Postgres hasn't analyzed. |
 | New in 0.2.2 | Install fixes: the installer shows the setup code the log shows, logs without color codes under systemd and Docker, and a connection check that says what to do with a self-signed Postgres certificate. |
+| New in 0.3.0 | **MySQL, MariaDB and MongoDB**, beside Postgres: see [Other databases](#other-databases). **Undo:** a merged run's rows put back as they were, each checked against the database first, for 30 days (`POST /v1/runs/:id/undo`, and an Undo button on the run's page). **Several databases** behind one gateway (`POST /v1/connect` with a `name`). **Several gateways** sharing one store, one leading at a time, for high availability: see [Running it in production](#running-it-in-production). The image runs its engine again (the 0.2.11 image couldn't). |
 | New in 0.2.11 | **An AI reviewer before a person:** any OpenAI-compatible model decides held merges first; it is shown structure, not row text, and the engine refuses its approval of person-only holds. Runs take `row_rules`, and policies take the engine 0.4.10 rules (`trusted_columns`, `watch_totals`, `canary`, `effects_delay`, `max_unusual` and more). See [An AI reviewer before a person](#an-ai-reviewer-before-a-person). |
 | New in 0.2.10 | **Runs write as your end user:** `act_as` on `POST /v1/runs` names a Postgres role and settings (such as `request.jwt.claims`), and the run's merge is written after `SET LOCAL ROLE`, so your grants and row-level security decide what it may write (engine 0.4.9). Once, in Postgres: `GRANT authenticated TO <the role the gateway connects as>`. |
 | New in 0.2.9 | **Fixes sign-in for approvers:** people allowed only by a group (`group:` in `GATEWAY_OIDC_ALLOW`) can now approve. Signing out now holds, and someone refused can sign in with another account. |
@@ -34,6 +35,7 @@ unless you set up webhooks or link it to Chronos Cloud (both optional).
 - [Set it up in the console](#set-it-up-in-the-console)
 - [Your first key](#your-first-key)
 - [Connect your Postgres](#connect-your-postgres)
+- [Other databases](#other-databases): MySQL, MariaDB, MongoDB, and several at once
 - [Run an agent](#run-an-agent)
 - [Approve a held change](#approve-a-held-change)
 - [The console](#the-console)
@@ -150,7 +152,7 @@ To install one exact release, use that release's own installer. It also names th
 with:
 
 ```bash
-curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.2.11/install.sh | sudo sh -s -- --service
+curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.0/install.sh | sudo sh -s -- --service
 ```
 
 Installer options:
@@ -160,7 +162,7 @@ Installer options:
 | `--service` | Install as a systemd service (Linux, root). Without it: only the binaries. |
 | `--uninstall` | Remove the service and the binaries. Keeps the data and the settings. |
 | `CHRONOS_GATEWAY_PREFIX` | Where the binaries go. Default `/usr/local` as root, else `~/.local`. |
-| `CHRONOS_GATEWAY_VERSION` | A release tag such as `v0.2.11`. Default: the release the script came from. |
+| `CHRONOS_GATEWAY_VERSION` | A release tag such as `v0.3.0`. Default: the release the script came from. |
 | `CHRONOS_VERIFY=1` | Also check each download's signature with cosign (gateway 0.2.6 and later; the engine it bundles is signed too). |
 | `CHRONOS_GATEWAY_BASE_URL`, `CHRONOS_ENGINE_BASE_URL` | Download from a mirror instead of GitHub. |
 
@@ -169,7 +171,7 @@ Installer options:
 
 ### 2. Docker
 
-The image is `ghcr.io/abhishekxdg/chronos-gateway`. Tags: `0.2.11`, `0.2.10`, `0.2.9`, `0.2.8`, `0.2.7`, `0.2.6`, `0.2.5`, `0.2.4`, `0.2.3`, `0.2.2`, `0.2.1`, `0.2.0`, `0.1.1`, `0.1.0` and `latest`, each for `linux/amd64`
+The image is `ghcr.io/abhishekxdg/chronos-gateway`. Tags: `0.3.0`, `0.2.10`, `0.2.9`, `0.2.8`, `0.2.7`, `0.2.6`, `0.2.5`, `0.2.4`, `0.2.3`, `0.2.2`, `0.2.1`, `0.2.0`, `0.1.1`, `0.1.0` and `latest`, each for `linux/amd64`
 and `linux/arm64`. It holds both programs on a distroless base (no shell), runs as user 65532, and keeps its data in
 `/data`.
 
@@ -177,7 +179,7 @@ and `linux/arm64`. It holds both programs on a distroless base (no shell), runs 
 docker run -d --name chronos-gateway --restart unless-stopped \
   -p 127.0.0.1:7400:7400 \
   -v chronos-gateway:/data \
-  ghcr.io/abhishekxdg/chronos-gateway:0.2.11
+  ghcr.io/abhishekxdg/chronos-gateway:0.3.0
 docker logs chronos-gateway     # the setup code; then open http://localhost:7400/console
 ```
 
@@ -193,7 +195,7 @@ docker logs chronos-gateway     # the setup code; then open http://localhost:740
 From 0.2.6, each image is signed with cosign (keyless) by Chronos's release account. To check it before you run it:
 
 ```bash
-cosign verify ghcr.io/abhishekxdg/chronos-gateway:0.2.11 \
+cosign verify ghcr.io/abhishekxdg/chronos-gateway:0.3.0 \
   --certificate-identity chronos-release@project-7a947b34-cb98-4716-8f2.iam.gserviceaccount.com \
   --certificate-oidc-issuer https://accounts.google.com
 ```
@@ -206,7 +208,7 @@ capabilities, and the port on this machine only.
 ```bash
 mkdir chronos-gateway && cd chronos-gateway
 curl -fsSLO https://raw.githubusercontent.com/Abhishekxdg/chronos-gateway-releases/main/compose.yaml
-echo 'GATEWAY_VERSION=0.2.11' > .env
+echo 'GATEWAY_VERSION=0.3.0' > .env
 docker compose up -d
 docker compose logs gateway     # the setup code; then open http://localhost:7400/console
 ```
@@ -223,7 +225,7 @@ it an address. Kubernetes 1.25 or newer.
 
 ```bash
 helm install chronos-gateway \
-  https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.2.11/chronos-gateway-0.2.11.tgz \
+  https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.0/chronos-gateway-0.3.0.tgz \
   --namespace chronos --create-namespace
 kubectl -n chronos logs statefulset/chronos-gateway | grep -A4 'Set up Chronos Gateway'   # the setup code
 kubectl -n chronos port-forward svc/chronos-gateway 7400:7400   # then open http://localhost:7400/console
@@ -419,6 +421,51 @@ At its first start the gateway attaches the tables and logs `attached leads, acc
 (or the reason it couldn't). It copies the file into its data folder at every start, so a changed password is
 picked up at the next restart. This also works after you connected through the API: set `GATEWAY_SOURCE_FILE` to rotate the password.
 While it is set, `POST /v1/connect` takes `tables` only and refuses a `url`.
+
+## Other databases
+
+The gateway works beside Postgres, MySQL, MariaDB and MongoDB. The URL says which: the same look, attach, runs,
+rules, approvals and undo follow. Agents write the same SQL whatever the database.
+
+| Database | Versions tested | URL |
+|---|---|---|
+| Postgres | 12 to 18, Supabase, Neon | `postgres://...` |
+| MySQL | 8.0, 8.4 | `mysql://user:password@host:3306/database` |
+| MariaDB | 10.5, 11 | `mariadb://user:password@host:3306/database` |
+| MongoDB | 5.0, 7.0 (a replica set) | `mongodb://user:password@host:27017/database` |
+
+MySQL, MariaDB and MongoDB were tested run locally in containers, not against a managed service (RDS, Aurora,
+Atlas). Try yours on a staging copy first.
+
+**MySQL and MariaDB.** InnoDB tables with a primary key. A row a run adds to an `AUTO_INCREMENT` table has a
+provisional id (negative) until its merge, when the database gives its own. Not yet: binary columns, `act_as`,
+taking changes as they commit (`GATEWAY_FOLLOW`); the gateway refreshes on a timer.
+
+**MongoDB.** A replica set (one member is enough); not a standalone server or a sharded cluster.
+
+- A collection is attached as a table: `_id`, the fields you name as columns (`fields` in `POST /v1/connect`), and
+  the rest of each document. The tenant's field is added to them for you.
+- Name a field in `fields` if you mask it, or if agents filter by it.
+- A merge sends MongoDB only the fields that changed, in one transaction, each document compared first.
+- A run has MongoDB's own tools as well as SQL: `find`, `count`, `insert`, `update_one`, `update_many`,
+  `delete_one`, `delete_many`, over MCP (`mongo_find`, ...) and `POST /v1/runs/:id/mongo`.
+- Not yet: `$regex`, `aggregate`, date ranges in filters, changing one element of an array, `GATEWAY_FOLLOW`.
+
+**Several databases behind one gateway.** Connect the first as ever. Connect another under a name:
+
+```bash
+curl -s "$GATEWAY/v1/connect" -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+  -d '{"name": "shop", "url": "mysql://chronos_gateway:...@db:3306/shop", "tables": ["orders"], "tenant_column": "account_id"}'
+```
+
+Each has its own engine, tenant column, rules, labels and masks. A run names its database (`"source": "shop"` in
+`POST /v1/runs`); a request for one names it with the header `X-Chronos-Source: shop`. Without a name they mean the
+first, so nothing changes for a gateway with one database. The console has a picker.
+
+**Undo.** A merged run can be put back for 30 days: `POST /v1/runs/:id/undo` with `{"preview": true}` says what
+would go back, in words, and which rows changed since; without it, it is done. A row someone changed since stays
+theirs unless you pass `"skip_changed": true` to undo the rest. Emails and webhooks already sent are listed, not
+unsent.
 
 ## Run an agent
 
@@ -936,6 +983,18 @@ image is pushed with build provenance and an SBOM.
     gateway is never in their path.
 - **The service unit** runs as `chronos-gateway` with a hardened sandbox (`ProtectSystem=strict`, `NoNewPrivileges`,
   write access to the data folder only). On stop, the gateway stops the engine cleanly before it exits.
+
+### Several gateways (high availability)
+
+Several gateways can share one store and take turns leading, so the API stays up when one is lost. It needs:
+
+- `GATEWAY_STORE_URL`: a Postgres database for the gateway's own tables, shared by all of them;
+- one data folder mounted by every gateway (`GATEWAY_DATA`, a ReadWriteMany volume);
+- `GATEWAY_NODE_URL` on each: how the others reach it (`http://10.0.0.5:7400`).
+
+When the leader is lost another leads within about 15 seconds; merges pause meanwhile, and a run that was open at
+a hard stop starts again (its unmerged work isn't kept). The Helm chart has `ha.enabled`. New in 0.3.0, and tested
+with two gateways on one machine only, not yet on Kubernetes: try it before you rely on it.
 
 ## Upgrading
 

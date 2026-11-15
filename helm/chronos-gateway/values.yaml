@@ -77,6 +77,21 @@ ingress:
     enabled: true
     secretName: ""         # the certificate's Secret; empty: <release>-tls
 
+# High availability: several gateways, one leading at a time. They share a store in a Postgres of yours and one
+# data folder; when the leader's pod or node is lost, another leads within about 15 seconds. Merges pause meanwhile,
+# and a run that was open then starts again (unmerged work isn't kept through a hard stop).
+# See docs/high-availability.md before turning it on.
+ha:
+  enabled: false
+  replicas: 2
+  # a Secret of your own with the store's Postgres URL under the key storeUrl (a database for the gateway's own
+  # tables: keys, runs, approvals; not the one agents work on, though it may be the same server):
+  #   kubectl create secret generic chronos-store --from-literal=storeUrl=postgres://gateway:...@db:5432/gateway
+  storeExistingSecret: ""
+  # a ReadWriteMany PersistentVolumeClaim of your own (EFS, Filestore, Azure Files, CephFS, NFS), mounted by every
+  # gateway as its data folder. `persistence` below is not used then.
+  existingClaim: ""
+
 persistence:
   # the gateway's store, its keys, and the engine's folder: back it up with your Postgres
   size: 20Gi

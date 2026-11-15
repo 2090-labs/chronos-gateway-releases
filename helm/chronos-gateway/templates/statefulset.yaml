@@ -6,8 +6,14 @@ metadata:
   name: {{ include "gateway.name" . }}
   labels: {{- include "gateway.labels" . | nindent 4 }}
 spec:
+  {{- if .Values.ha.enabled }}
+  # several, one leading at a time (the others send their requests to it): see docs/high-availability.md
+  replicas: {{ .Values.ha.replicas }}
+  podManagementPolicy: Parallel
+  {{- else }}
   # one: the engine's folder has one writer (a restart takes seconds)
   replicas: 1
+  {{- end }}
   serviceName: {{ include "gateway.name" . }}
   selector:
     matchLabels: {{- include "gateway.selector" . | nindent 6 }}
@@ -46,6 +52,16 @@ spec:
           env:
             - { name: GATEWAY_DATA, value: /data }
             - { name: GATEWAY_LISTEN, value: "0.0.0.0:7400" }
+            {{- if .Values.ha.enabled }}
+            # the store every gateway shares, and how they reach each other (the leader's address goes in its lease)
+            - name: GATEWAY_STORE_URL
+              valueFrom:
+                secretKeyRef: { name: {{ required "ha.storeExistingSecret is required with ha.enabled: a Secret with the store's Postgres URL under the key storeUrl" .Values.ha.storeExistingSecret | quote }}, key: storeUrl }
+            - name: POD_IP
+              valueFrom:
+                fieldRef: { fieldPath: status.podIP }
+            - { name: GATEWAY_NODE_URL, value: "http://$(POD_IP):7400" }
+            {{- end }}
             {{- with $publicUrl }}
             - { name: GATEWAY_PUBLIC_URL, value: {{ . | quote }} }
             {{- end }}
@@ -118,6 +134,12 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
+        {{- if .Values.ha.enabled }}
+        # one folder for all of them: the leader's engine writes it, the next leader's opens it
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ required "ha.existingClaim is required with ha.enabled: a ReadWriteMany claim every gateway mounts" .Values.ha.existingClaim | quote }}
+        {{- end }}
         {{- if include "gateway.hasPostgres" . }}
         - name: postgres
           secret:
@@ -135,6 +157,7 @@ spec:
       {{- with .Values.affinity }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
+  {{- if not .Values.ha.enabled }}
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -146,3 +169,4 @@ spec:
         resources:
           requests:
             storage: {{ .Values.persistence.size }}
+  {{- end }}

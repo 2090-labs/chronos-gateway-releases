@@ -1,6 +1,8 @@
 # High availability
 
-New in 0.3.0. Tested on one machine with two gateway processes; not yet on Kubernetes. Try it before you rely on it.
+New in 0.3.0. Tested with two gateway processes on one machine, and with two pods on a one-node Kubernetes cluster
+(kind, a shared host folder, a Postgres store): requests through the follower, and the other pod leading after the
+leader pod was deleted. Not yet on a cluster of several nodes with a real shared volume: try it before you rely on it.
 
 Several gateways can run behind one address. One leads at a time; when it stops or is lost, another takes over.
 

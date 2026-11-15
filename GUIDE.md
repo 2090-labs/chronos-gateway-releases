@@ -10,12 +10,13 @@ unless you set up webhooks or link it to Chronos Cloud (both optional).
 
 | | |
 |---|---|
-| Current release | **0.3.0** ([release notes](https://github.com/Abhishekxdg/chronos-gateway-releases/releases)) |
-| Engine it bundles | Chronos **0.5.0** ([release](https://github.com/Abhishekxdg/Chronos-DB/releases/tag/v0.5.0)) |
+| Current release | **0.3.1** ([release notes](https://github.com/Abhishekxdg/chronos-gateway-releases/releases)) |
+| Engine it bundles | Chronos **0.5.1** ([release](https://github.com/Abhishekxdg/Chronos-DB/releases/tag/v0.5.1)) |
 | Status | Early (0.3). Try it on a staging copy of your database first. |
 | New in 0.2.0 | [The console](#the-console): set it up, review and approve, and change the rules in your browser; [your own domain](#on-your-own-domain-over-https) with HTTPS. |
 | New in 0.2.1 | Console fixes: conflicts shown row by row with by-column settling, plain-word table names, "?" rows for tables Postgres hasn't analyzed. |
 | New in 0.2.2 | Install fixes: the installer shows the setup code the log shows, logs without color codes under systemd and Docker, and a connection check that says what to do with a self-signed Postgres certificate. |
+| New in 0.3.1 | **Undo from Slack:** a merge's message carries a link that undoes it. **Disconnect a database** connected under a name. **MongoDB:** `$regex` and date filters in its tools, and `GATEWAY_FOLLOW` through change streams. Undo works with the gateway's own role (its statements now make the undo table). |
 | New in 0.3.0 | **MySQL, MariaDB and MongoDB**, beside Postgres: see [Other databases](#other-databases). **Undo:** a merged run's rows put back as they were, each checked against the database first, for 30 days (`POST /v1/runs/:id/undo`, and an Undo button on the run's page). **Several databases** behind one gateway (`POST /v1/connect` with a `name`). **Several gateways** sharing one store, one leading at a time, for high availability: see [Running it in production](#running-it-in-production). The image runs its engine again (the 0.2.11 image couldn't). |
 | New in 0.2.11 | **An AI reviewer before a person:** any OpenAI-compatible model decides held merges first; it is shown structure, not row text, and the engine refuses its approval of person-only holds. Runs take `row_rules`, and policies take the engine 0.4.10 rules (`trusted_columns`, `watch_totals`, `canary`, `effects_delay`, `max_unusual` and more). See [An AI reviewer before a person](#an-ai-reviewer-before-a-person). |
 | New in 0.2.10 | **Runs write as your end user:** `act_as` on `POST /v1/runs` names a Postgres role and settings (such as `request.jwt.claims`), and the run's merge is written after `SET LOCAL ROLE`, so your grants and row-level security decide what it may write (engine 0.4.9). Once, in Postgres: `GRANT authenticated TO <the role the gateway connects as>`. |
@@ -152,7 +153,7 @@ To install one exact release, use that release's own installer. It also names th
 with:
 
 ```bash
-curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.0/install.sh | sudo sh -s -- --service
+curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.1/install.sh | sudo sh -s -- --service
 ```
 
 Installer options:
@@ -162,7 +163,7 @@ Installer options:
 | `--service` | Install as a systemd service (Linux, root). Without it: only the binaries. |
 | `--uninstall` | Remove the service and the binaries. Keeps the data and the settings. |
 | `CHRONOS_GATEWAY_PREFIX` | Where the binaries go. Default `/usr/local` as root, else `~/.local`. |
-| `CHRONOS_GATEWAY_VERSION` | A release tag such as `v0.3.0`. Default: the release the script came from. |
+| `CHRONOS_GATEWAY_VERSION` | A release tag such as `v0.3.1`. Default: the release the script came from. |
 | `CHRONOS_VERIFY=1` | Also check each download's signature with cosign (gateway 0.2.6 and later; the engine it bundles is signed too). |
 | `CHRONOS_GATEWAY_BASE_URL`, `CHRONOS_ENGINE_BASE_URL` | Download from a mirror instead of GitHub. |
 
@@ -171,7 +172,7 @@ Installer options:
 
 ### 2. Docker
 
-The image is `ghcr.io/abhishekxdg/chronos-gateway`. Tags: `0.3.0`, `0.2.10`, `0.2.9`, `0.2.8`, `0.2.7`, `0.2.6`, `0.2.5`, `0.2.4`, `0.2.3`, `0.2.2`, `0.2.1`, `0.2.0`, `0.1.1`, `0.1.0` and `latest`, each for `linux/amd64`
+The image is `ghcr.io/abhishekxdg/chronos-gateway`. Tags: `0.3.1`, `0.3.0`, `0.2.10`, `0.2.9`, `0.2.8`, `0.2.7`, `0.2.6`, `0.2.5`, `0.2.4`, `0.2.3`, `0.2.2`, `0.2.1`, `0.2.0`, `0.1.1`, `0.1.0` and `latest`, each for `linux/amd64`
 and `linux/arm64`. It holds both programs on a distroless base (no shell), runs as user 65532, and keeps its data in
 `/data`.
 
@@ -179,7 +180,7 @@ and `linux/arm64`. It holds both programs on a distroless base (no shell), runs 
 docker run -d --name chronos-gateway --restart unless-stopped \
   -p 127.0.0.1:7400:7400 \
   -v chronos-gateway:/data \
-  ghcr.io/abhishekxdg/chronos-gateway:0.3.0
+  ghcr.io/abhishekxdg/chronos-gateway:0.3.1
 docker logs chronos-gateway     # the setup code; then open http://localhost:7400/console
 ```
 
@@ -195,7 +196,7 @@ docker logs chronos-gateway     # the setup code; then open http://localhost:740
 From 0.2.6, each image is signed with cosign (keyless) by Chronos's release account. To check it before you run it:
 
 ```bash
-cosign verify ghcr.io/abhishekxdg/chronos-gateway:0.3.0 \
+cosign verify ghcr.io/abhishekxdg/chronos-gateway:0.3.1 \
   --certificate-identity chronos-release@project-7a947b34-cb98-4716-8f2.iam.gserviceaccount.com \
   --certificate-oidc-issuer https://accounts.google.com
 ```
@@ -208,7 +209,7 @@ capabilities, and the port on this machine only.
 ```bash
 mkdir chronos-gateway && cd chronos-gateway
 curl -fsSLO https://raw.githubusercontent.com/Abhishekxdg/chronos-gateway-releases/main/compose.yaml
-echo 'GATEWAY_VERSION=0.3.0' > .env
+echo 'GATEWAY_VERSION=0.3.1' > .env
 docker compose up -d
 docker compose logs gateway     # the setup code; then open http://localhost:7400/console
 ```
@@ -225,7 +226,7 @@ it an address. Kubernetes 1.25 or newer.
 
 ```bash
 helm install chronos-gateway \
-  https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.0/chronos-gateway-0.3.0.tgz \
+  https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.1/chronos-gateway-0.3.1.tgz \
   --namespace chronos --create-namespace
 kubectl -n chronos logs statefulset/chronos-gateway | grep -A4 'Set up Chronos Gateway'   # the setup code
 kubectl -n chronos port-forward svc/chronos-gateway 7400:7400   # then open http://localhost:7400/console
@@ -363,10 +364,17 @@ create schema if not exists chronos;
 create table if not exists chronos.merges (id text primary key, at timestamptz not null default now());
 grant usage on schema chronos to chronos_gateway;
 grant select, insert on chronos.merges to chronos_gateway;
+create table if not exists chronos.merge_rows (merge_id text not null, n int not null, table_name text not null,
+  op text not null, key jsonb, before jsonb, after jsonb, at timestamptz not null default now(),
+  primary key (merge_id, n));
+create index if not exists merge_rows_at on chronos.merge_rows (at);
+grant select, insert, delete on chronos.merge_rows to chronos_gateway;
 ```
 
 That is all the role may do: read and write the attached tables, use their sequences, and record each merge in its
-own table `chronos.merges`. It is not an owner and not a superuser.
+own table `chronos.merges`, and keep what each merge wrote in `chronos.merge_rows`, which undo reads. It is not an
+owner and not a superuser. A role made from statements before 0.3.1 has no `chronos.merge_rows`: undo then answers
+409 `undo_not_ready` with the statements to run once.
 
 On Postgres 12 or 13, run `set password_encryption = 'scram-sha-256';` in the same session before `create role`.
 The engine refuses to send a password as MD5 or in the clear unless the connection is `sslmode=verify-full`.
@@ -390,8 +398,9 @@ The gateway saves the URL in its data folder (`source.url`, readable by its user
 and the gateway starts the engine and sets up the merge policy. The answer is `{"ok": true, ...}` with the engine's
 report.
 
-One data folder holds one Postgres connection. A second `POST /v1/connect` answers `409 attached`. To attach other
-tables later, start a gateway with a new data folder.
+A second `POST /v1/connect` without a `name` answers `409 attached`: the first database is connected once. Connect
+another database beside it under a `name` (see [Other databases](#other-databases)); one connected under a name
+can be disconnected again (`DELETE /v1/sources/:name`).
 
 ### Connect at start instead
 
@@ -449,7 +458,11 @@ taking changes as they commit (`GATEWAY_FOLLOW`); the gateway refreshes on a tim
 - A merge sends MongoDB only the fields that changed, in one transaction, each document compared first.
 - A run has MongoDB's own tools as well as SQL: `find`, `count`, `insert`, `update_one`, `update_many`,
   `delete_one`, `delete_many`, over MCP (`mongo_find`, ...) and `POST /v1/runs/:id/mongo`.
-- Not yet: `$regex`, `aggregate`, date ranges in filters, changing one element of an array, `GATEWAY_FOLLOW`.
+- Filters take `$regex` (with `$options: "i"`) and compare dates (`{"$date": ...}`), from 0.3.1.
+- `GATEWAY_FOLLOW=on` follows MongoDB's changes through a change stream on each attached collection (engine
+  0.5.1 or later). The gateway's role has `changeStream` on them for it: a role made from older statements needs
+  that added (`db.grantPrivilegesToRole`), or the engine says what is missing and keeps refreshing on its timer.
+- Not yet: `aggregate`, `$elemMatch`, changing one element of an array.
 
 **Several databases behind one gateway.** Connect the first as ever. Connect another under a name:
 
@@ -733,7 +746,7 @@ them too. Times take `60`, `60s`, `15m`, `1h` or `1d`. For limits, `0` means no 
 |---|---|---|
 | `CHRONOS_BIN` | the engine the installer put beside it, else `chronos` on the `PATH` | The engine binary. |
 | `GATEWAY_REFRESH_EVERY` | `5m` | How often the engine takes Postgres's latest rows. |
-| `GATEWAY_FOLLOW` | off | `on`: the engine also takes Postgres's changes about a second after they commit, through a logical replication slot. Needs `wal_level = logical` and a role with `REPLICATION` (the connect check's `follow` says what's missing). The slot keeps Postgres's WAL while the engine is down: on Postgres 13+ set `max_slot_wal_keep_size`, and drop it (`chronos refresh <data>/db --unfollow`, with the gateway stopped) if you turn this off. |
+| `GATEWAY_FOLLOW` | off | `on`: the engine also takes the database's changes about a second after they commit. Beside MongoDB: change streams, nothing to set up or clean up. Beside MySQL and MariaDB: not yet (refresh on the timer). Beside Postgres: through a logical replication slot. Needs `wal_level = logical` and a role with `REPLICATION` (the connect check's `follow` says what's missing). The slot keeps Postgres's WAL while the engine is down: on Postgres 13+ set `max_slot_wal_keep_size`, and drop it (`chronos refresh <data>/db --unfollow`, with the gateway stopped) if you turn this off. |
 | `GATEWAY_SOURCE_FILE` | unset | A file holding the Postgres URL. Copied into the data folder at each start. |
 | `GATEWAY_TABLES` | unset | With `GATEWAY_SOURCE_FILE`: the tables to attach at the first start, comma-separated. |
 | `GATEWAY_TENANT_COLUMN` | unset | With `GATEWAY_TABLES`: the tenant column. |
@@ -747,7 +760,8 @@ them too. Times take `60`, `60s`, `15m`, `1h` or `1d`. For limits, `0` means no 
 | `GATEWAY_POLICY_RULES` | `max_rows = 500, max_deletes = 0, rows_per_hour = 5000, max_age = '15 minutes', check_reads = true, require_scope = true` | The rules a change must keep to be written without a person. See below. |
 | `GATEWAY_RUN_TTL` | `1h` | How long a run, and its token, lasts. A run can ask for less (`ttl_seconds`), not more. |
 | `GATEWAY_HOLD_TTL` | `3d` | How long a held change waits for a person before it expires. |
-| `GATEWAY_APPROVAL_TTL` | `1d` | How long an approval link works, at most. |
+| `GATEWAY_APPROVAL_TTL` | `1d` | How long an approval link works, at most. An undo link in a Slack message too. |
+| `GATEWAY_SLACK_UNDO` | `on` | A Slack message of a merge carries a link that undoes it (once, for whoever holds it, rows changed since left alone). `off`: no link. |
 | `GATEWAY_RUN_STATEMENTS_PER_MINUTE` | `120` | SQL statements and MCP tool calls per run per minute. Past it: `429`. |
 | `GATEWAY_RUN_PROPOSES_PER_MINUTE` | `6` | Proposes per run per minute. Each one locks and compares rows in your Postgres. Past it: `429 too_many_proposes`. |
 | `GATEWAY_RUNS_PER_HOUR` | `60` | New runs per tenant per hour. Past it: `429 too_many_runs`, and a `run.refused` webhook. |
@@ -871,13 +885,14 @@ confidence, by: {reviewer, model}}`). An approval also sends `merge.landed` with
 
 ## Security model
 
-**Three kinds of token.** Each is 32 random bytes with a prefix. The gateway stores only their SHA-256 hashes.
+**Four kinds of token.** Each is 32 random bytes with a prefix. The gateway stores only their SHA-256 hashes.
 
 | Token | Who holds it | What it opens | How long |
 |---|---|---|---|
 | `cgk_` developer key | your backend | everything except a run's own SQL and MCP, and the widget's calls | until revoked (`keys revoke <id>`) |
 | `cgr_` run token | one agent | that one run: its SQL, MCP, changes, status and propose | until the run ends or its time runs out |
 | `cga_` approval token | one person | one held change, at the version it was made for, once | `GATEWAY_APPROVAL_TTL` |
+| `cgu_` undo link | whoever is in the Slack channel | undo one merged change, once, as far as its rows are unchanged | `GATEWAY_APPROVAL_TTL` |
 
 Keep the developer key in your backend only: it can start runs and approve held changes. It never reaches Postgres
 directly.
@@ -911,7 +926,7 @@ limits to know:
 | `POST /v1/connect/check` | The gateway logs in with the URL you sent and reads the catalog. No writes. The URL isn't kept. |
 | `POST /v1/connect` | The engine logs in as the gateway's role and reads the attached tables to copy them. |
 | Every `GATEWAY_REFRESH_EVERY` | The engine reads the attached tables again. |
-| Every second, with `GATEWAY_FOLLOW` | The engine reads the changes since the last second from its replication slot, then the rows they name. |
+| Every second, with `GATEWAY_FOLLOW` | The engine reads the changes since the last second from its replication slot (MongoDB: a change stream on each attached collection), then the rows they name. |
 | An agent's SQL or MCP | Nothing. It runs in the run's world. |
 | A merge (rules kept, or a person approved) | One transaction: each row the merge writes is locked and compared with Postgres, then written, and the merge is recorded in `chronos.merges`. If any row changed meanwhile, nothing is written. |
 | Held, rejected, expired or discarded | Nothing. |
@@ -941,7 +956,7 @@ change it, over plain HTTP. Tokens travel in headers, so put TLS in front (nginx
 anything on another machine calls it, and set `GATEWAY_PUBLIC_URL` to the `https://` address. The gateway logs a
 warning when it listens beyond loopback with an `http://` public URL.
 
-**Downloads.** The installer checks every binary against its release's `SHA256SUMS`. Releases aren't signed yet. The
+**Downloads.** The installer checks every binary against its release's `SHA256SUMS`. Releases are signed with cosign (keyless) from 0.2.6: `CHRONOS_VERIFY=1` makes the installer check the signatures too. The
 image is pushed with build provenance and an SBOM.
 
 ## Running it in production
@@ -994,7 +1009,8 @@ Several gateways can share one store and take turns leading, so the API stays up
 
 When the leader is lost another leads within about 15 seconds; merges pause meanwhile, and a run that was open at
 a hard stop starts again (its unmerged work isn't kept). The Helm chart has `ha.enabled`. New in 0.3.0, and tested
-with two gateways on one machine only, not yet on Kubernetes: try it before you rely on it.
+with two gateways on one machine and two pods on a one-node kind cluster, not under load or across machines: try it
+before you rely on it.
 
 ## Upgrading
 
@@ -1050,7 +1066,7 @@ drop them.
 | `/v1/connect`: "the server asks for the password as MD5" (or "in the clear") | Set `password_encryption = 'scram-sha-256'` and set the role's password again (`alter role chronos_gateway password '...'`), or connect with `sslmode=verify-full`. |
 | `/v1/connect`: "no CA certificates found" | `verify-full` found no system CA bundle. Add `sslrootcert=<file.pem>` with your CA, readable by the gateway's user (in Docker, mount it). |
 | `/v1/connect` in Docker can't reach a Postgres on the same machine | Inside the container, `localhost` is the container. Use `host.docker.internal` (Docker Desktop; on Linux add `--add-host=host.docker.internal:host-gateway` to `docker run`). |
-| `/v1/connect`: `409 attached` | This data folder already has a Postgres. Use a new data folder for different tables. |
+| `/v1/connect`: `409 attached` | The first database is already connected, or the `name` is taken. Connect another under a new `name`. |
 | "the engine didn't start within 30 s" | Read `engine.log` in the data folder. |
 | `POST /v1/runs`: `400 tenant_column` | No attached table has that column. The message lists the attached tables and their columns. |
 | `429 too_many_runs`, `too_many_proposes`, or "statements a minute" | A limit from [Configuration](#configuration). A loop that never settles a conflict hits `too_many_proposes`. |

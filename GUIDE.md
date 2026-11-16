@@ -10,12 +10,13 @@ unless you set up webhooks or link it to Chronos Cloud (both optional).
 
 | | |
 |---|---|
-| Current release | **0.3.1** ([release notes](https://github.com/Abhishekxdg/chronos-gateway-releases/releases)) |
-| Engine it bundles | Chronos **0.5.1** ([release](https://github.com/Abhishekxdg/Chronos-DB/releases/tag/v0.5.1)) |
+| Current release | **0.3.2** ([release notes](https://github.com/Abhishekxdg/chronos-gateway-releases/releases)) |
+| Engine it bundles | Chronos **0.5.2** ([release](https://github.com/Abhishekxdg/Chronos-DB/releases/tag/v0.5.2)) |
 | Status | Early (0.3). Try it on a staging copy of your database first. |
 | New in 0.2.0 | [The console](#the-console): set it up, review and approve, and change the rules in your browser; [your own domain](#on-your-own-domain-over-https) with HTTPS. |
 | New in 0.2.1 | Console fixes: conflicts shown row by row with by-column settling, plain-word table names, "?" rows for tables Postgres hasn't analyzed. |
 | New in 0.2.2 | Install fixes: the installer shows the setup code the log shows, logs without color codes under systemd and Docker, and a connection check that says what to do with a self-signed Postgres certificate. |
+| New in 0.3.2 | **Undo again:** a run undone but for rows changed since can be undone for those rows later, and a run with a part approved and the rest rejected can be undone for that part. `PUT /v1/policy` answers the rules it ended. A Slack message keeps one link across retries, and names MariaDB. |
 | New in 0.3.1 | **Undo from Slack:** a merge's message carries a link that undoes it. **Disconnect a database** connected under a name. **MongoDB:** `$regex` and date filters in its tools, and `GATEWAY_FOLLOW` through change streams. Undo works with the gateway's own role (its statements now make the undo table). |
 | New in 0.3.0 | **MySQL, MariaDB and MongoDB**, beside Postgres: see [Other databases](#other-databases). **Undo:** a merged run's rows put back as they were, each checked against the database first, for 30 days (`POST /v1/runs/:id/undo`, and an Undo button on the run's page). **Several databases** behind one gateway (`POST /v1/connect` with a `name`). **Several gateways** sharing one store, one leading at a time, for high availability: see [Running it in production](#running-it-in-production). The image runs its engine again (the 0.2.11 image couldn't). |
 | New in 0.2.11 | **An AI reviewer before a person:** any OpenAI-compatible model decides held merges first; it is shown structure, not row text, and the engine refuses its approval of person-only holds. Runs take `row_rules`, and policies take the engine 0.4.10 rules (`trusted_columns`, `watch_totals`, `canary`, `effects_delay`, `max_unusual` and more). See [An AI reviewer before a person](#an-ai-reviewer-before-a-person). |
@@ -153,7 +154,7 @@ To install one exact release, use that release's own installer. It also names th
 with:
 
 ```bash
-curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.1/install.sh | sudo sh -s -- --service
+curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.2/install.sh | sudo sh -s -- --service
 ```
 
 Installer options:
@@ -163,7 +164,7 @@ Installer options:
 | `--service` | Install as a systemd service (Linux, root). Without it: only the binaries. |
 | `--uninstall` | Remove the service and the binaries. Keeps the data and the settings. |
 | `CHRONOS_GATEWAY_PREFIX` | Where the binaries go. Default `/usr/local` as root, else `~/.local`. |
-| `CHRONOS_GATEWAY_VERSION` | A release tag such as `v0.3.1`. Default: the release the script came from. |
+| `CHRONOS_GATEWAY_VERSION` | A release tag such as `v0.3.2`. Default: the release the script came from. |
 | `CHRONOS_VERIFY=1` | Also check each download's signature with cosign (gateway 0.2.6 and later; the engine it bundles is signed too). |
 | `CHRONOS_GATEWAY_BASE_URL`, `CHRONOS_ENGINE_BASE_URL` | Download from a mirror instead of GitHub. |
 
@@ -172,7 +173,7 @@ Installer options:
 
 ### 2. Docker
 
-The image is `ghcr.io/abhishekxdg/chronos-gateway`. Tags: `0.3.1`, `0.3.0`, `0.2.10`, `0.2.9`, `0.2.8`, `0.2.7`, `0.2.6`, `0.2.5`, `0.2.4`, `0.2.3`, `0.2.2`, `0.2.1`, `0.2.0`, `0.1.1`, `0.1.0` and `latest`, each for `linux/amd64`
+The image is `ghcr.io/abhishekxdg/chronos-gateway`. Tags: `0.3.2`, `0.3.1`, `0.3.0`, `0.2.10`, `0.2.9`, `0.2.8`, `0.2.7`, `0.2.6`, `0.2.5`, `0.2.4`, `0.2.3`, `0.2.2`, `0.2.1`, `0.2.0`, `0.1.1`, `0.1.0` and `latest`, each for `linux/amd64`
 and `linux/arm64`. It holds both programs on a distroless base (no shell), runs as user 65532, and keeps its data in
 `/data`.
 
@@ -180,7 +181,7 @@ and `linux/arm64`. It holds both programs on a distroless base (no shell), runs 
 docker run -d --name chronos-gateway --restart unless-stopped \
   -p 127.0.0.1:7400:7400 \
   -v chronos-gateway:/data \
-  ghcr.io/abhishekxdg/chronos-gateway:0.3.1
+  ghcr.io/abhishekxdg/chronos-gateway:0.3.2
 docker logs chronos-gateway     # the setup code; then open http://localhost:7400/console
 ```
 
@@ -196,7 +197,7 @@ docker logs chronos-gateway     # the setup code; then open http://localhost:740
 From 0.2.6, each image is signed with cosign (keyless) by Chronos's release account. To check it before you run it:
 
 ```bash
-cosign verify ghcr.io/abhishekxdg/chronos-gateway:0.3.1 \
+cosign verify ghcr.io/abhishekxdg/chronos-gateway:0.3.2 \
   --certificate-identity chronos-release@project-7a947b34-cb98-4716-8f2.iam.gserviceaccount.com \
   --certificate-oidc-issuer https://accounts.google.com
 ```
@@ -209,7 +210,7 @@ capabilities, and the port on this machine only.
 ```bash
 mkdir chronos-gateway && cd chronos-gateway
 curl -fsSLO https://raw.githubusercontent.com/Abhishekxdg/chronos-gateway-releases/main/compose.yaml
-echo 'GATEWAY_VERSION=0.3.1' > .env
+echo 'GATEWAY_VERSION=0.3.2' > .env
 docker compose up -d
 docker compose logs gateway     # the setup code; then open http://localhost:7400/console
 ```
@@ -226,7 +227,7 @@ it an address. Kubernetes 1.25 or newer.
 
 ```bash
 helm install chronos-gateway \
-  https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.1/chronos-gateway-0.3.1.tgz \
+  https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.2/chronos-gateway-0.3.2.tgz \
   --namespace chronos --create-namespace
 kubectl -n chronos logs statefulset/chronos-gateway | grep -A4 'Set up Chronos Gateway'   # the setup code
 kubectl -n chronos port-forward svc/chronos-gateway 7400:7400   # then open http://localhost:7400/console
@@ -477,7 +478,7 @@ first, so nothing changes for a gateway with one database. The console has a pic
 
 **Undo.** A merged run can be put back for 30 days: `POST /v1/runs/:id/undo` with `{"preview": true}` says what
 would go back, in words, and which rows changed since; without it, it is done. A row someone changed since stays
-theirs unless you pass `"skip_changed": true` to undo the rest. Emails and webhooks already sent are listed, not
+theirs unless you pass `"skip_changed": true` to undo the rest. A run undone that way (`partly_undone`) can be undone again once those rows hold what the run wrote; so can a run that ended `rejected`, `expired` or `discarded` after a part of it was approved, for what that part wrote. Emails and webhooks already sent are listed, not
 unsent.
 
 ## Run an agent

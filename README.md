@@ -4,11 +4,13 @@
 
 Every agent gets its own private copy of its customer's rows. It can read, write and delete there all day.
 Nothing reaches your database until the change passes your rules, and the rows it touches still match what's live.
-Anything risky waits for a person to click **Approve**.
+Anything risky waits for a person to click **Approve**. A merged run can be undone for 30 days.
+Beside Postgres, MySQL, MariaDB and MongoDB.
 
 [![Release](https://img.shields.io/github/v/release/Abhishekxdg/chronos-gateway-releases?label=release&style=flat-square&labelColor=050505&color=c8ff2e)](https://github.com/Abhishekxdg/chronos-gateway-releases/releases/latest)
 [![Image](https://img.shields.io/badge/ghcr.io-chronos--gateway-2c2c2c?style=flat-square&labelColor=050505&logo=docker&logoColor=f2f2ee)](https://github.com/users/Abhishekxdg/packages/container/package/chronos-gateway)
 [![Postgres 12+](https://img.shields.io/badge/Postgres-12%2B-2c2c2c?style=flat-square&labelColor=050505&logo=postgresql&logoColor=f2f2ee)](GUIDE.md#requirements)
+[![MySQL, MariaDB, MongoDB](https://img.shields.io/badge/also-MySQL%20%C2%B7%20MariaDB%20%C2%B7%20MongoDB-2c2c2c?style=flat-square&labelColor=050505)](GUIDE.md#other-databases)
 [![License: BUSL-1.1](https://img.shields.io/badge/license-BUSL--1.1-2c2c2c?style=flat-square&labelColor=050505)](LICENSE)
 
 [**Deploy in 1 minute**](#deploy-in-1-minute) · [**Try it in 5**](#your-first-agent-in-5-minutes) ·
@@ -27,11 +29,13 @@ it a Postgres password and hope.
 | The agent holds a database password | The agent holds a run token that opens **one task, for one customer, for one hour** |
 | A prompt injection reads every tenant's data | It only ever sees **its tenant's rows**, whatever SQL it sends |
 | `DELETE FROM leads` runs on production | Deletes happen in a **private copy**; by default every delete waits for a person |
-| A stale read overwrites someone's edit | Each row is **locked and compared with Postgres** at write time; a changed row stops the merge |
+| A stale read overwrites someone's edit | Each row is **locked and compared with your database** at write time; a changed row stops the merge |
+| A bad change landed yesterday | **Undo the run**: its rows put back as they were, each checked first, for 30 days |
 | You find out what it did from the logs | You see **"Remove lead ‘Hooli’"** and approve it, or turn it down |
 
-Your app keeps reading and writing Postgres exactly as it does today. The gateway sits beside it, never in front of
-it.
+Your app keeps reading and writing its database exactly as it does today. The gateway sits beside it, never in front
+of it. The examples here use Postgres; MySQL 8.0+, MariaDB 10.5+ and MongoDB 5.0+ (a replica set) work the same way,
+and one gateway can serve several databases: [Other databases](GUIDE.md#other-databases).
 
 ## How it works
 
@@ -246,6 +250,9 @@ More in [Use it from your code](GUIDE.md#use-it-from-your-code) and
 - **Fresh within a second, if you like.** With `GATEWAY_FOLLOW=on` the engine takes your app's changes about a
   second after they commit, through a logical replication slot. Otherwise it reads them every 5 minutes
   (`GATEWAY_REFRESH_EVERY`). [Configuration](GUIDE.md#configuration).
+- **Undo.** A merged run can be put back for 30 days: a preview says what would go back, rows someone changed since
+  stay theirs, and a Slack message of a merge can carry the undo link.
+  [Other databases and undo](GUIDE.md#other-databases).
 - **An admin console** at `/console`: review held changes row by row and approve all or part, set the rules as a
   form, make keys, add webhooks. Sign in with a key or your SSO. [The console](GUIDE.md#the-console).
 - **Changes in plain words** for whoever approves, with columns you choose to hide.
@@ -253,14 +260,15 @@ More in [Use it from your code](GUIDE.md#use-it-from-your-code) and
 - **Least privilege.** The gateway's role reads and writes only the tables you attach. It is never an owner or a
   superuser.
 - **Your network, your data.** No account, no phone-home. Optional link to Chronos Cloud for a dashboard.
-- **Works with the Postgres you run:** 12 or newer, wherever it's hosted, as long as the gateway can reach it.
-  Tested on 12 to 18, Supabase (through its pooler) and Neon (pooled or direct, and waking from a suspend).
+- **Works with the database you run.** Postgres 12 or newer, wherever it's hosted: tested on 12 to 18, Supabase
+  (through its pooler) and Neon (pooled or direct, and waking from a suspend). From 0.3.0 also MySQL 8.0+,
+  MariaDB 10.5+ and MongoDB 5.0+ (a replica set). [What each one supports](GUIDE.md#other-databases).
 
 ## Docs
 
 | | |
 |---|---|
-| **Set it up** | [Requirements](GUIDE.md#requirements) · [Install](GUIDE.md#install) · [Set it up in the console](GUIDE.md#set-it-up-in-the-console) · [Your first key](GUIDE.md#your-first-key) · [Connect your Postgres](GUIDE.md#connect-your-postgres) |
+| **Set it up** | [Requirements](GUIDE.md#requirements) · [Install](GUIDE.md#install) · [Set it up in the console](GUIDE.md#set-it-up-in-the-console) · [Your first key](GUIDE.md#your-first-key) · [Connect your Postgres](GUIDE.md#connect-your-postgres) · [Other databases](GUIDE.md#other-databases) |
 | **Use it** | [Run an agent](GUIDE.md#run-an-agent) · [Approve a held change](GUIDE.md#approve-a-held-change) · [The console](GUIDE.md#the-console) · [Use it from your code](GUIDE.md#use-it-from-your-code) · [API at a glance](GUIDE.md#api-at-a-glance) |
 | **Run it for real** | [Configuration](GUIDE.md#configuration) · [Security model](GUIDE.md#security-model) · [Running it in production](GUIDE.md#running-it-in-production) · [Upgrading](GUIDE.md#upgrading) · [Troubleshooting](GUIDE.md#troubleshooting) |
 | **The engine underneath** | [Chronos DB](https://github.com/Abhishekxdg/Chronos-DB) · [Chronos DB docs](https://chronosdb-docs.vercel.app/) · [Attach to Postgres](https://chronosdb-docs.vercel.app/guides/attach-postgres) |
@@ -268,7 +276,7 @@ More in [Use it from your code](GUIDE.md#use-it-from-your-code) and
 ## Prefer the database itself?
 
 The gateway is a service around [**Chronos DB**](https://github.com/Abhishekxdg/Chronos-DB), the database for AI
-agents: worlds (branches of your data), merge policies, and the checked write-back to Postgres. Run Chronos DB on its
+agents: worlds (branches of your data), merge policies, and the checked write-back to your database. Run Chronos DB on its
 own when you'd rather drive it directly, over the Postgres wire protocol or MCP:
 
 - [Chronos DB on GitHub](https://github.com/Abhishekxdg/Chronos-DB): releases, install, source
@@ -278,7 +286,7 @@ own when you'd rather drive it directly, over the Postgres wire protocol or MCP:
 
 ## Status
 
-Early: 0.3.4, on Chronos DB 0.5.5. Beside Postgres, and from 0.3.0 MySQL, MariaDB and MongoDB. Try it on a staging copy of your database first, and
+Early: 0.3.4, on Chronos DB 0.5.5. Beside Postgres, and from 0.3.0 MySQL, MariaDB and MongoDB, with undo. Try it on a staging copy of your database first, and
 [open an issue](https://github.com/Abhishekxdg/chronos-gateway-releases/issues) when something surprises you.
 
 Source-available under [BUSL-1.1](LICENSE). Downloads are the installer, static Linux binaries (x86-64 and arm64)

@@ -10,8 +10,8 @@ unless you set up webhooks or link it to Chronos Cloud (both optional).
 
 | | |
 |---|---|
-| Current release | **0.3.4** ([release notes](https://github.com/Abhishekxdg/chronos-gateway-releases/releases)) |
-| Engine it bundles | Chronos **0.5.5** ([release](https://github.com/Abhishekxdg/Chronos-DB/releases/tag/v0.5.5)) |
+| Current release | **0.3.4** ([release notes](https://github.com/2090-labs/chronos-gateway-releases/releases)) |
+| Engine it bundles | Chronos **0.5.5** ([release](https://github.com/2090-labs/Chronos-DB/releases/tag/v0.5.5)) |
 | Status | Early (0.3). Try it on a staging copy of your database first. |
 | New in 0.2.0 | [The console](#the-console): set it up, review and approve, and change the rules in your browser; [your own domain](#on-your-own-domain-over-https) with HTTPS. |
 | New in 0.2.1 | Console fixes: conflicts shown row by row with by-column settling, plain-word table names, "?" rows for tables Postgres hasn't analyzed. |
@@ -122,7 +122,7 @@ the gateway prints a **setup code**: open its console, enter the code, and the c
 starts the service, and prints the console's address and a setup code:
 
 ```bash
-curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/latest/download/install.sh | sudo sh -s -- --service
+curl -fsSL https://github.com/2090-labs/chronos-gateway-releases/releases/latest/download/install.sh | sudo sh -s -- --service
 ```
 
 **Just the binaries, for your own user.** This puts `chronos-gateway` in `~/.local/bin` and the engine in
@@ -130,7 +130,7 @@ curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/late
 `http://127.0.0.1:7400/console`:
 
 ```bash
-curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/latest/download/install.sh | sh
+curl -fsSL https://github.com/2090-labs/chronos-gateway-releases/releases/latest/download/install.sh | sh
 ```
 
 What the installer does, in order:
@@ -146,7 +146,7 @@ What the installer does, in order:
 To read the script before you run it:
 
 ```bash
-curl -fsSLO https://github.com/Abhishekxdg/chronos-gateway-releases/releases/latest/download/install.sh
+curl -fsSLO https://github.com/2090-labs/chronos-gateway-releases/releases/latest/download/install.sh
 less install.sh
 sudo sh install.sh --service
 ```
@@ -155,7 +155,7 @@ To install one exact release, use that release's own installer. It also names th
 with:
 
 ```bash
-curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.4/install.sh | sudo sh -s -- --service
+curl -fsSL https://github.com/2090-labs/chronos-gateway-releases/releases/download/v0.3.4/install.sh | sudo sh -s -- --service
 ```
 
 Installer options:
@@ -210,7 +210,7 @@ capabilities, and the port on this machine only.
 
 ```bash
 mkdir chronos-gateway && cd chronos-gateway
-curl -fsSLO https://raw.githubusercontent.com/Abhishekxdg/chronos-gateway-releases/main/compose.yaml
+curl -fsSLO https://raw.githubusercontent.com/2090-labs/chronos-gateway-releases/main/compose.yaml
 echo 'GATEWAY_VERSION=0.3.4' > .env
 docker compose up -d
 docker compose logs gateway     # the setup code; then open http://localhost:7400/console
@@ -228,14 +228,14 @@ it an address. Kubernetes 1.25 or newer.
 
 ```bash
 helm install chronos-gateway \
-  https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.4/chronos-gateway-0.3.4.tgz \
+  https://github.com/2090-labs/chronos-gateway-releases/releases/download/v0.3.4/chronos-gateway-0.3.4.tgz \
   --namespace chronos --create-namespace
 kubectl -n chronos logs statefulset/chronos-gateway | grep -A4 'Set up Chronos Gateway'   # the setup code
 kubectl -n chronos port-forward svc/chronos-gateway 7400:7400   # then open http://localhost:7400/console
 ```
 
 The install prints these commands too. Settings go in a values file (`helm install ... -f values.yaml`); the chart's
-[`values.yaml`](https://github.com/Abhishekxdg/chronos-gateway-releases/blob/main/helm/chronos-gateway/values.yaml)
+[`values.yaml`](https://github.com/2090-labs/chronos-gateway-releases/blob/main/helm/chronos-gateway/values.yaml)
 explains each one. The ones most installs set:
 
 | Value | What it does |
@@ -1020,7 +1020,7 @@ Back up the data folder first. Upgrades keep settings, data and keys.
 
 | Install | Upgrade |
 |---|---|
-| Installer, `--service` | Run the same command again: `curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/latest/download/install.sh \| sudo sh -s -- --service`. It replaces both binaries and restarts the service. |
+| Installer, `--service` | Run the same command again: `curl -fsSL https://github.com/2090-labs/chronos-gateway-releases/releases/latest/download/install.sh \| sudo sh -s -- --service`. It replaces both binaries and restarts the service. |
 | Installer, binaries only | Run the same command again, then restart your `chronos-gateway`. |
 | Docker | `docker pull ghcr.io/abhishekxdg/chronos-gateway:<version>`, then `docker rm -f chronos-gateway` and run the same `docker run` command with the new tag. The volume carries over. |
 | Docker Compose | Set the new `GATEWAY_VERSION` in `.env`, then `docker compose pull && docker compose up -d`. |
@@ -1039,7 +1039,7 @@ The bundled engine answers `--version` too:
 ## Uninstalling
 
 ```bash
-curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/latest/download/install.sh | sudo sh -s -- --uninstall
+curl -fsSL https://github.com/2090-labs/chronos-gateway-releases/releases/latest/download/install.sh | sudo sh -s -- --uninstall
 ```
 
 This removes the service and both binaries, and keeps the data folder and the settings. To remove those too (the
@@ -1081,7 +1081,7 @@ drop them.
 | Installer: "doesn't run on this machine; nothing was installed" | The x86-64 build needs an x86-64-v2 CPU. Use the Docker image on another host. |
 | Installer: "no macOS build of the gateway yet" | Use Docker on macOS. |
 
-Questions and bug reports: [issues](https://github.com/Abhishekxdg/chronos-gateway-releases/issues).
+Questions and bug reports: [issues](https://github.com/2090-labs/chronos-gateway-releases/issues).
 
 ## License
 
@@ -1092,4 +1092,4 @@ Chronos Gateway is under the Business Source License 1.1 ([`LICENSE`](LICENSE)).
 - Four years after each version is published, that version becomes Apache License 2.0.
 
 The `LICENSE` file is the binding text. The engine it bundles (`chronos`) is a separate project with its own
-license, in [its repository](https://github.com/Abhishekxdg/Chronos-DB).
+license, in [its repository](https://github.com/2090-labs/Chronos-DB).

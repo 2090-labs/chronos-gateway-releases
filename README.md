@@ -7,7 +7,7 @@ Nothing reaches your database until the change passes your rules, and the rows i
 Anything risky waits for a person to click **Approve**. A merged run can be undone for 30 days.
 Beside Postgres, MySQL, MariaDB and MongoDB.
 
-[![Release](https://img.shields.io/github/v/release/Abhishekxdg/chronos-gateway-releases?label=release&style=flat-square&labelColor=050505&color=c8ff2e)](https://github.com/Abhishekxdg/chronos-gateway-releases/releases/latest)
+[![Release](https://img.shields.io/github/v/release/2090-labs/chronos-gateway-releases?label=release&style=flat-square&labelColor=050505&color=c8ff2e)](https://github.com/2090-labs/chronos-gateway-releases/releases/latest)
 [![Image](https://img.shields.io/badge/ghcr.io-chronos--gateway-2c2c2c?style=flat-square&labelColor=050505&logo=docker&logoColor=f2f2ee)](https://github.com/users/Abhishekxdg/packages/container/package/chronos-gateway)
 [![Postgres 12+](https://img.shields.io/badge/Postgres-12%2B-2c2c2c?style=flat-square&labelColor=050505&logo=postgresql&logoColor=f2f2ee)](GUIDE.md#requirements)
 [![MySQL, MariaDB, MongoDB](https://img.shields.io/badge/also-MySQL%20%C2%B7%20MariaDB%20%C2%B7%20MongoDB-2c2c2c?style=flat-square&labelColor=050505)](GUIDE.md#other-databases)
@@ -15,7 +15,7 @@ Beside Postgres, MySQL, MariaDB and MongoDB.
 
 [**Deploy in 1 minute**](#deploy-in-1-minute) · [**Try it in 5**](#your-first-agent-in-5-minutes) ·
 [**Setup guide**](GUIDE.md) · [**API**](GUIDE.md#api-at-a-glance) ·
-[**Chronos DB**](https://github.com/Abhishekxdg/Chronos-DB)
+[**Chronos DB**](https://github.com/2090-labs/Chronos-DB)
 
 </div>
 
@@ -85,7 +85,7 @@ docker logs chronos-gateway     # a setup code: open http://localhost:7400/conso
 ### Linux server (systemd service)
 
 ```bash
-curl -fsSL https://github.com/Abhishekxdg/chronos-gateway-releases/releases/latest/download/install.sh | sudo sh -s -- --service
+curl -fsSL https://github.com/2090-labs/chronos-gateway-releases/releases/latest/download/install.sh | sudo sh -s -- --service
 ```
 
 It checks every download against `SHA256SUMS` (and its cosign signature, with `CHRONOS_VERIFY=1`), installs a
@@ -98,7 +98,7 @@ Point your domain's DNS at the server, then:
 
 ```bash
 mkdir chronos-gateway && cd chronos-gateway
-curl -fsSLO https://raw.githubusercontent.com/Abhishekxdg/chronos-gateway-releases/main/compose.yaml
+curl -fsSLO https://raw.githubusercontent.com/2090-labs/chronos-gateway-releases/main/compose.yaml
 echo 'GATEWAY_DOMAIN=gateway.example.com' > .env
 docker compose --profile https up -d     # Caddy gets the certificate by itself
 docker compose logs gateway              # a setup code: open https://gateway.example.com/console
@@ -110,7 +110,7 @@ Leave out the domain and `--profile https` to run it on this machine only.
 
 ```bash
 helm install chronos-gateway \
-  https://github.com/Abhishekxdg/chronos-gateway-releases/releases/download/v0.3.4/chronos-gateway-0.3.4.tgz \
+  https://github.com/2090-labs/chronos-gateway-releases/releases/download/v0.3.4/chronos-gateway-0.3.4.tgz \
   --namespace chronos --create-namespace
 kubectl -n chronos logs statefulset/chronos-gateway | grep -A4 'Set up Chronos Gateway'   # a setup code
 kubectl -n chronos port-forward svc/chronos-gateway 7400:7400   # then open http://localhost:7400/console
@@ -271,15 +271,15 @@ More in [Use it from your code](GUIDE.md#use-it-from-your-code) and
 | **Set it up** | [Requirements](GUIDE.md#requirements) · [Install](GUIDE.md#install) · [Set it up in the console](GUIDE.md#set-it-up-in-the-console) · [Your first key](GUIDE.md#your-first-key) · [Connect your Postgres](GUIDE.md#connect-your-postgres) · [Other databases](GUIDE.md#other-databases) |
 | **Use it** | [Run an agent](GUIDE.md#run-an-agent) · [Approve a held change](GUIDE.md#approve-a-held-change) · [The console](GUIDE.md#the-console) · [Use it from your code](GUIDE.md#use-it-from-your-code) · [API at a glance](GUIDE.md#api-at-a-glance) |
 | **Run it for real** | [Configuration](GUIDE.md#configuration) · [Security model](GUIDE.md#security-model) · [Running it in production](GUIDE.md#running-it-in-production) · [Upgrading](GUIDE.md#upgrading) · [Troubleshooting](GUIDE.md#troubleshooting) |
-| **The engine underneath** | [Chronos DB](https://github.com/Abhishekxdg/Chronos-DB) · [Chronos DB docs](https://chronosdb-docs.vercel.app/) · [Attach to Postgres](https://chronosdb-docs.vercel.app/guides/attach-postgres) |
+| **The engine underneath** | [Chronos DB](https://github.com/2090-labs/Chronos-DB) · [Chronos DB docs](https://chronosdb-docs.vercel.app/) · [Attach to Postgres](https://chronosdb-docs.vercel.app/guides/attach-postgres) |
 
 ## Prefer the database itself?
 
-The gateway is a service around [**Chronos DB**](https://github.com/Abhishekxdg/Chronos-DB), the database for AI
+The gateway is a service around [**Chronos DB**](https://github.com/2090-labs/Chronos-DB), the database for AI
 agents: worlds (branches of your data), merge policies, and the checked write-back to your database. Run Chronos DB on its
 own when you'd rather drive it directly, over the Postgres wire protocol or MCP:
 
-- [Chronos DB on GitHub](https://github.com/Abhishekxdg/Chronos-DB): releases, install, source
+- [Chronos DB on GitHub](https://github.com/2090-labs/Chronos-DB): releases, install, source
 - [Quickstart](https://chronosdb-docs.vercel.app/quickstart) · [Concepts](https://chronosdb-docs.vercel.app/concepts) ·
   [Merge policies](https://chronosdb-docs.vercel.app/guides/merge-policies) ·
   [Attach to Postgres](https://chronosdb-docs.vercel.app/guides/attach-postgres)
@@ -287,7 +287,7 @@ own when you'd rather drive it directly, over the Postgres wire protocol or MCP:
 ## Status
 
 Early: 0.3.4, on Chronos DB 0.5.5. Beside Postgres, and from 0.3.0 MySQL, MariaDB and MongoDB, with undo. Try it on a staging copy of your database first, and
-[open an issue](https://github.com/Abhishekxdg/chronos-gateway-releases/issues) when something surprises you.
+[open an issue](https://github.com/2090-labs/chronos-gateway-releases/issues) when something surprises you.
 
 Source-available under [BUSL-1.1](LICENSE). Downloads are the installer, static Linux binaries (x86-64 and arm64)
 and the image `ghcr.io/abhishekxdg/chronos-gateway` (amd64 and arm64).

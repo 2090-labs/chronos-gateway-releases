@@ -2,10 +2,10 @@ apiVersion: v2
 name: chronos-gateway
 description: Chronos Gateway, self-hosted on Kubernetes (the gateway and the engine it runs, one pod, no cloud account)
 type: application
-version: 0.3.4
-appVersion: "0.3.4"
+version: 0.4.1
+appVersion: "0.4.1"
 home: https://chronos.2090.tech
 sources:
-  - https://github.com/Abhishekxdg/chronos-gateway-releases
+  - https://github.com/2090-labs/chronos-gateway-releases
 keywords: [postgres, agents, chronos, gateway]
 kubeVersion: ">=1.25.0-0"

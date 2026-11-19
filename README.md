@@ -110,7 +110,7 @@ Leave out the domain and `--profile https` to run it on this machine only.
 
 ```bash
 helm install chronos-gateway \
-  https://github.com/2090-labs/chronos-gateway-releases/releases/download/v0.4.2/chronos-gateway-0.4.2.tgz \
+  https://github.com/2090-labs/chronos-gateway-releases/releases/download/v0.4.3/chronos-gateway-0.4.3.tgz \
   --namespace chronos --create-namespace
 kubectl -n chronos logs statefulset/chronos-gateway | grep -A4 'Set up Chronos Gateway'   # a setup code
 kubectl -n chronos port-forward svc/chronos-gateway 7400:7400   # then open http://localhost:7400/console
@@ -286,7 +286,7 @@ own when you'd rather drive it directly, over the Postgres wire protocol or MCP:
 
 ## Status
 
-Early: 0.4.2, on Chronos DB 0.6.2. Beside Postgres, and from 0.3.0 MySQL, MariaDB and MongoDB, with undo. Try it on a staging copy of your database first, and
+Early: 0.4.3, on Chronos DB 0.6.2. Beside Postgres, and from 0.3.0 MySQL, MariaDB and MongoDB, with undo. Try it on a staging copy of your database first, and
 [open an issue](https://github.com/2090-labs/chronos-gateway-releases/issues) when something surprises you.
 
 Source-available under [BUSL-1.1](LICENSE). Downloads are the installer, static Linux binaries (x86-64 and arm64)

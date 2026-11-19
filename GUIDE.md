@@ -10,12 +10,13 @@ unless you set up webhooks or link it to Chronos Cloud (both optional).
 
 | | |
 |---|---|
-| Current release | **0.4.2** ([release notes](https://github.com/2090-labs/chronos-gateway-releases/releases)) |
+| Current release | **0.4.3** ([release notes](https://github.com/2090-labs/chronos-gateway-releases/releases)) |
 | Engine it bundles | Chronos **0.6.2** ([release](https://github.com/2090-labs/Chronos-DB/releases/tag/v0.6.2)) |
 | Status | Early (0.4). Try it on a staging copy of your database first. |
 | New in 0.2.0 | [The console](#the-console): set it up, review and approve, and change the rules in your browser; [your own domain](#on-your-own-domain-over-https) with HTTPS. |
 | New in 0.2.1 | Console fixes: conflicts shown row by row with by-column settling, plain-word table names, "?" rows for tables Postgres hasn't analyzed. |
 | New in 0.2.2 | Install fixes: the installer shows the setup code the log shows, logs without color codes under systemd and Docker, and a connection check that says what to do with a self-signed Postgres certificate. |
+| New in 0.4.3 | **Fixes from an audit.** A merge from Chronos Cloud of a run's world is an approval like any: of a run held or in conflict, at the `version` the person saw, into main (else 409 or 400). In `diffs` mode a cloud diff never returns SQL and a refusal loses its detail, so masked columns stay masked. A late approval that meets a conflict waits until the hold ends instead of being expired. The gateway listens while a first attach copies the database. MongoDB `$exists: 0` and `null` mean without the field. A console sign-in made with `GATEWAY_API_KEY` ends when that key changes (sign in again after upgrading). |
 | New in 0.4.2 | **A strict change waits on the database as it was:** a person's approval of a held run that sends payment, payout, transfer or refund effects is refused (409 `strict_target`, nothing merged) once other changes reached the database since the hold, as the engine's own strict proposals are; such a change is approved whole, never in part. Engine unchanged (0.6.2). |
 | New in 0.4.1 | **Strict changes are for a person, in their window:** a held run that sends payment, payout, transfer or refund effects is never approved by the AI reviewer, a person approves it within 15 minutes (the policy's `strict_window`), and `<chronos-approve>` shows it with the time left. Engine 0.6.2: strict proposals, merges refused when an attached source may lose an acknowledged commit, MongoDB merges committed to a majority, and fixes from an audit of 0.6.0. Data format unchanged. |
 | New in 0.4.0 | **Child runs** (`POST /v1/runs/:id/children`: a sub-agent's run forked from its parent's, merged into it), **effects delivered** to your receivers, signed and retried (`GATEWAY_EFFECTS`), **evidence** with a propose, and runs safe against lost answers and two decisions at once. Engine 0.6.0 keeps agents to their tenant everywhere and logs every merge in a hash-chained ledger. Clients 0.3.0 add CrewAI, Pydantic AI and LangGraph adapters. **Upgrading:** engine 0.6.0 writes data format 8 on its first checkpoint or merge, which 0.5 can't open: back up the data folder first. |
@@ -158,7 +159,7 @@ To install one exact release, use that release's own installer. It also names th
 with:
 
 ```bash
-curl -fsSL https://github.com/2090-labs/chronos-gateway-releases/releases/download/v0.4.2/install.sh | sudo sh -s -- --service
+curl -fsSL https://github.com/2090-labs/chronos-gateway-releases/releases/download/v0.4.3/install.sh | sudo sh -s -- --service
 ```
 
 Installer options:
@@ -168,7 +169,7 @@ Installer options:
 | `--service` | Install as a systemd service (Linux, root). Without it: only the binaries. |
 | `--uninstall` | Remove the service and the binaries. Keeps the data and the settings. |
 | `CHRONOS_GATEWAY_PREFIX` | Where the binaries go. Default `/usr/local` as root, else `~/.local`. |
-| `CHRONOS_GATEWAY_VERSION` | A release tag such as `v0.4.2`. Default: the release the script came from. |
+| `CHRONOS_GATEWAY_VERSION` | A release tag such as `v0.4.3`. Default: the release the script came from. |
 | `CHRONOS_VERIFY=1` | Also check each download's signature with cosign (gateway 0.2.6 and later; the engine it bundles is signed too). |
 | `CHRONOS_GATEWAY_BASE_URL`, `CHRONOS_ENGINE_BASE_URL` | Download from a mirror instead of GitHub. |
 
@@ -177,7 +178,7 @@ Installer options:
 
 ### 2. Docker
 
-The image is `ghcr.io/abhishekxdg/chronos-gateway`. Tags: `0.4.2`, `0.4.1`, `0.4.0`, `0.3.4`, `0.3.3`, `0.3.2`, `0.3.1`, `0.3.0`, `0.2.10`, `0.2.9`, `0.2.8`, `0.2.7`, `0.2.6`, `0.2.5`, `0.2.4`, `0.2.3`, `0.2.2`, `0.2.1`, `0.2.0`, `0.1.1`, `0.1.0` and `latest`, each for `linux/amd64`
+The image is `ghcr.io/abhishekxdg/chronos-gateway`. Tags: `0.4.3`, `0.4.2`, `0.4.1`, `0.4.0`, `0.3.4`, `0.3.3`, `0.3.2`, `0.3.1`, `0.3.0`, `0.2.10`, `0.2.9`, `0.2.8`, `0.2.7`, `0.2.6`, `0.2.5`, `0.2.4`, `0.2.3`, `0.2.2`, `0.2.1`, `0.2.0`, `0.1.1`, `0.1.0` and `latest`, each for `linux/amd64`
 and `linux/arm64`. It holds both programs on a distroless base (no shell), runs as user 65532, and keeps its data in
 `/data`.
 
@@ -185,7 +186,7 @@ and `linux/arm64`. It holds both programs on a distroless base (no shell), runs 
 docker run -d --name chronos-gateway --restart unless-stopped \
   -p 127.0.0.1:7400:7400 \
   -v chronos-gateway:/data \
-  ghcr.io/abhishekxdg/chronos-gateway:0.4.2
+  ghcr.io/abhishekxdg/chronos-gateway:0.4.3
 docker logs chronos-gateway     # the setup code; then open http://localhost:7400/console
 ```
 
@@ -201,7 +202,7 @@ docker logs chronos-gateway     # the setup code; then open http://localhost:740
 From 0.2.6, each image is signed with cosign (keyless) by Chronos's release account. To check it before you run it:
 
 ```bash
-cosign verify ghcr.io/abhishekxdg/chronos-gateway:0.4.2 \
+cosign verify ghcr.io/abhishekxdg/chronos-gateway:0.4.3 \
   --certificate-identity chronos-release@project-7a947b34-cb98-4716-8f2.iam.gserviceaccount.com \
   --certificate-oidc-issuer https://accounts.google.com
 ```
@@ -214,7 +215,7 @@ capabilities, and the port on this machine only.
 ```bash
 mkdir chronos-gateway && cd chronos-gateway
 curl -fsSLO https://raw.githubusercontent.com/2090-labs/chronos-gateway-releases/main/compose.yaml
-echo 'GATEWAY_VERSION=0.4.2' > .env
+echo 'GATEWAY_VERSION=0.4.3' > .env
 docker compose up -d
 docker compose logs gateway     # the setup code; then open http://localhost:7400/console
 ```
@@ -231,7 +232,7 @@ it an address. Kubernetes 1.25 or newer.
 
 ```bash
 helm install chronos-gateway \
-  https://github.com/2090-labs/chronos-gateway-releases/releases/download/v0.4.2/chronos-gateway-0.4.2.tgz \
+  https://github.com/2090-labs/chronos-gateway-releases/releases/download/v0.4.3/chronos-gateway-0.4.3.tgz \
   --namespace chronos --create-namespace
 kubectl -n chronos logs statefulset/chronos-gateway | grep -A4 'Set up Chronos Gateway'   # the setup code
 kubectl -n chronos port-forward svc/chronos-gateway 7400:7400   # then open http://localhost:7400/console
